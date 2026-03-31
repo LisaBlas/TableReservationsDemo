@@ -1,278 +1,672 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Table Reservations — Blas Alviz</title>
-  <meta name="description" content="Simple table reservation system for restaurants. No expensive platforms, no commissions. €25/month instead of OpenTable.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            'bg-primary': '#091018',
-            'bg-secondary': '#131f2d',
-            'accent': '#daa277',
-            'accent-hover': '#e8b78e',
-            'text-primary': '#edf0f4',
-            'text-secondary': '#7d8a9a',
-            'text-muted': '#4a5568',
-            'border-dark': 'rgba(255, 255, 255, 0.06)',
-            'border-hover': 'rgba(255, 255, 255, 0.12)',
-          },
-          borderRadius: {
-            'custom': '12px',
-            'custom-sm': '8px',
-          },
-          maxWidth: {
-            'container': '1120px',
-          },
-        },
-      },
-    }
-  </script>
-  <style>
-    html {
-      scroll-behavior: smooth;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Table Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f4f0;
+    --surface: #fff;
+    --surface-raised: #fafafa;
+    --border: #ebe9e3;
+    --text: #1a1a1a;
+    --text-dim: #6b7280;
+    --accent: #2d5a35;
+    --accent-glow: rgba(45, 90, 53, 0.2);
+    --red: #dc2626;
+    --green: #2d5a35;
+    --green-dim: rgba(45, 90, 53, 0.1);
+  }
 
-    .reveal {
-      opacity: 0;
-      transform: translateY(20px);
-      transition: opacity 0.6s ease, transform 0.6s ease;
-    }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    .reveal--visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
 
-    .feature-content h3::after {
-      content: '›';
-      font-size: 1.2rem;
-      transition: transform 0.2s;
-    }
+  header {
+    padding: 28px 32px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
 
-    .feature-content.active h3::after {
-      transform: rotate(90deg);
-    }
+  header h1 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
 
-    .feature-content p {
-      display: none;
-    }
+  header .date {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
 
-    .feature-content.active p {
-      display: block;
+  .date-nav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .date-btn {
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 34px;
+    height: 34px;
+    border-radius: 6px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.2s, background 0.2s;
+    font-family: inherit;
+  }
+
+  .date-btn:hover {
+    border-color: var(--accent);
+    background: var(--surface);
+  }
+
+  .today-btn {
+    width: auto;
+    padding: 0 12px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+
+  #datePicker {
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.88rem;
+    cursor: pointer;
+    outline: none;
+    color-scheme: light;
+  }
+
+  #datePicker:focus {
+    border-color: var(--accent);
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    min-height: calc(100vh - 80px);
+  }
+
+  /* ── LEFT PANEL: FORM ── */
+  .panel-left {
+    border-right: 1px solid var(--border);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .panel-left h2 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+
+  .form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .form-row label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    font-weight: 600;
+  }
+
+  .form-row input, .form-row select, .form-row textarea {
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
+    border-color: var(--accent);
+  }
+
+  .form-row textarea {
+    resize: vertical;
+    min-height: 52px;
+  }
+
+  .time-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .btn-book {
+    margin-top: 12px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    padding: 12px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.03em;
+    transition: opacity 0.2s;
+  }
+
+  .btn-book:hover { opacity: 0.85; }
+
+  .msg {
+    font-size: 0.82rem;
+    padding: 8px 10px;
+    border-radius: 6px;
+    margin-top: 4px;
+    display: none;
+  }
+
+  .msg.error { display: block; background: rgba(220, 38, 38, 0.1); color: var(--red); border: 1px solid rgba(220, 38, 38, 0.3); }
+  .msg.success { display: block; background: var(--green-dim); color: var(--green); border: 1px solid rgba(45, 90, 53, 0.3); }
+
+  /* ── RIGHT PANEL: TABLES ── */
+  .panel-right {
+    padding: 24px 28px;
+    overflow-y: auto;
+  }
+
+  .panel-right h2 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  .tables-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+  }
+
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    transition: border-color 0.2s;
+  }
+
+  .table-card:hover { border-color: var(--accent-glow); }
+
+  .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .table-name {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+
+  .table-seats {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    background: var(--surface-raised);
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  .table-empty {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    font-style: italic;
+    padding: 6px 0;
+  }
+
+  .reservation-chip {
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    position: relative;
+    animation: fadeSlide 0.3s ease;
+  }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .reservation-chip .res-name {
+    font-weight: 600;
+    font-size: 0.88rem;
+    margin-bottom: 2px;
+  }
+
+  .reservation-chip .res-time {
+    font-size: 0.78rem;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .reservation-chip .res-guests {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  .reservation-chip .res-notes {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-top: 3px;
+    font-style: italic;
+  }
+
+  .reservation-chip .btn-remove {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 2px 5px;
+    border-radius: 4px;
+    transition: color 0.2s, background 0.2s;
+  }
+
+  .reservation-chip .btn-remove:hover {
+    color: var(--red);
+    background: rgba(220, 38, 38, 0.1);
+  }
+
+  .conflict-warning {
+    font-size: 0.72rem;
+    color: var(--red);
+    background: rgba(220, 38, 38, 0.08);
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-top: 4px;
+  }
+
+  /* ── TIMELINE BAR ── */
+  .timeline-bar {
+    height: 6px;
+    background: var(--surface-raised);
+    border-radius: 3px;
+    margin: 8px 0 4px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .timeline-fill {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    opacity: 0.7;
+  }
+
+  .timeline-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .layout {
+      grid-template-columns: 1fr;
     }
-  </style>
+    .panel-left {
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+    }
+  }
+</style>
 </head>
-<body class="m-0 p-0 bg-bg-primary text-text-primary antialiased" style="font-family: 'Inter', -apple-system, sans-serif; line-height: 1.6;">
+<body>
 
-  <!-- Navigation -->
-  <nav class="fixed top-0 left-0 right-0 h-[72px] z-[100] backdrop-blur-2xl bg-bg-primary/95 border-b border-border-dark">
-    <div class="max-w-container mx-auto px-6 h-full flex items-center justify-between">
-      <a href="/" class="text-[17px] font-bold text-text-primary no-underline">blas<span class="text-accent">.</span></a>
-      <div class="flex gap-2 md:flex hidden" id="navLinks">
-        <a href="/" class="px-4 py-2 text-sm font-medium text-text-secondary rounded-custom-sm transition-colors duration-200 hover:text-text-primary no-underline">Home</a>
-        <a href="/#transformations" class="px-4 py-2 text-sm font-medium text-text-secondary rounded-custom-sm transition-colors duration-200 hover:text-text-primary no-underline">Examples</a>
-        <a href="/#products" class="px-4 py-2 text-sm font-medium text-text-secondary rounded-custom-sm transition-colors duration-200 hover:text-text-primary no-underline">Services</a>
-        <a href="/about" class="px-4 py-2 text-sm font-medium text-text-secondary rounded-custom-sm transition-colors duration-200 hover:text-text-primary no-underline">About</a>
-        <a href="/contact" class="px-4 py-2 text-sm font-semibold bg-accent text-bg-primary rounded-custom-sm ml-2 transition-colors duration-200 hover:bg-accent-hover no-underline">Free Review</a>
+<header>
+  <h1>Table Planner</h1>
+  <div class="date-nav">
+    <button class="date-btn" id="prevDay" title="Previous day">&#8249;</button>
+    <input type="date" id="datePicker">
+    <button class="date-btn" id="nextDay" title="Next day">&#8250;</button>
+    <button class="date-btn today-btn" id="todayBtn">Today</button>
+  </div>
+</header>
+
+<div class="layout">
+  <div class="panel-left">
+    <h2>New Reservation</h2>
+
+    <div class="form-row">
+      <label>Guest Name</label>
+      <input type="text" id="guestName" placeholder="e.g. Matt">
+    </div>
+
+    <div class="form-row">
+      <label>Number of Guests</label>
+      <input type="number" id="guestCount" min="1" max="20" value="2">
+    </div>
+
+    <div class="time-row">
+      <div class="form-row">
+        <label>Arrival</label>
+        <input type="time" id="timeStart" value="18:30">
+      </div>
+      <div class="form-row">
+        <label>Departure <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <input type="time" id="timeEnd" value="">
       </div>
     </div>
-  </nav>
 
-  <!-- Product Page -->
-  <section class="py-20" style="padding-top: 120px;">
-    <div class="max-w-container mx-auto px-6">
-
-      <div class="grid lg:grid-cols-[480px_1fr] grid-cols-1 gap-12 lg:gap-12 items-start min-h-[calc(100vh-72px)]">
-
-        <!-- Left: Sales Copy -->
-        <div class="lg:sticky lg:top-[112px]">
-          <div class="reveal">
-            <a href="/" class="inline-flex items-center gap-1.5 px-7 py-3.5 text-[15px] font-semibold text-text-primary bg-transparent border border-border-hover rounded-custom-sm transition-all duration-200 hover:border-text-muted hover:-translate-y-0.5 no-underline mb-6">
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-3.5 h-3.5 rotate-180">
-                <path d="M3 8h10M9 4l4 4-4 4"/>
-              </svg>
-              Back
-            </a>
-
-            <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-bg-secondary border border-border-dark rounded-md text-xs uppercase tracking-wider text-text-secondary ml-4">
-              🍽 Restaurants
-            </div>
-
-            <h1 class="text-[2.5rem] font-bold leading-tight mb-4">
-              Table Reservations
-            </h1>
-
-            <p class="text-lg text-text-secondary leading-relaxed mb-8">
-              Accept online reservations without paying OpenTable 15% commissions. Own your customer relationships and data—no middleman required.
-            </p>
-          </div>
-
-          <div class="reveal">
-            <div class="flex flex-col gap-4 my-8">
-
-              <div class="flex gap-3 items-start">
-                <svg class="w-6 h-6 flex-shrink-0 text-accent mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                  <line x1="3" y1="10" x2="21" y2="10"/>
-                </svg>
-                <div class="feature-content cursor-pointer flex-1 p-2 -m-2 rounded-md transition-colors duration-200 hover:bg-accent/5 active">
-                  <h3 class="text-base font-semibold mb-1 text-text-primary flex items-center gap-2">Visual floor plan</h3>
-                  <p class="text-sm text-text-secondary leading-relaxed mt-2">See all tables and reservations at a glance. Timeline bars show when each table is occupied—no more double-bookings.</p>
-                </div>
-              </div>
-
-              <div class="flex gap-3 items-start">
-                <svg class="w-6 h-6 flex-shrink-0 text-accent mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                  <line x1="12" y1="22.08" x2="12" y2="12"/>
-                </svg>
-                <div class="feature-content cursor-pointer flex-1 p-2 -m-2 rounded-md transition-colors duration-200 hover:bg-accent/5">
-                  <h3 class="text-base font-semibold mb-1 text-text-primary flex items-center gap-2">Smart auto-assignment</h3>
-                  <p class="text-sm text-text-secondary leading-relaxed mt-2">System automatically picks the best-fit table for party size. Or manually assign to specific tables when needed.</p>
-                </div>
-              </div>
-
-              <div class="flex gap-3 items-start">
-                <svg class="w-6 h-6 flex-shrink-0 text-accent mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                  <circle cx="8.5" cy="7" r="4"/>
-                  <line x1="20" y1="8" x2="20" y2="14"/>
-                  <line x1="23" y1="11" x2="17" y2="11"/>
-                </svg>
-                <div class="feature-content cursor-pointer flex-1 p-2 -m-2 rounded-md transition-colors duration-200 hover:bg-accent/5">
-                  <h3 class="text-base font-semibold mb-1 text-text-primary flex items-center gap-2">Guest notes & pre-orders</h3>
-                  <p class="text-sm text-text-secondary leading-relaxed mt-2">Track dietary restrictions, special occasions, or pre-ordered dishes. Everything you need to know before guests arrive.</p>
-                </div>
-              </div>
-
-              <div class="flex gap-3 items-start">
-                <svg class="w-6 h-6 flex-shrink-0 text-accent mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-                  <path d="m15 5 4 4"/>
-                </svg>
-                <div class="feature-content cursor-pointer flex-1 p-2 -m-2 rounded-md transition-colors duration-200 hover:bg-accent/5">
-                  <h3 class="text-base font-semibold mb-1 text-text-primary flex items-center gap-2">Day-by-day navigation</h3>
-                  <p class="text-sm text-text-secondary leading-relaxed mt-2">Switch between dates instantly. Each day's reservations are stored separately—plan weeks ahead or review past bookings.</p>
-                </div>
-              </div>
-
-              <div class="flex gap-3 items-start">
-                <svg class="w-6 h-6 flex-shrink-0 text-accent mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"/>
-                  <polyline points="12 6 12 12 16 14"/>
-                </svg>
-                <div class="feature-content cursor-pointer flex-1 p-2 -m-2 rounded-md transition-colors duration-200 hover:bg-accent/5">
-                  <h3 class="text-base font-semibold mb-1 text-text-primary flex items-center gap-2">Conflict detection</h3>
-                  <p class="text-sm text-text-secondary leading-relaxed mt-2">System warns if you try to book an occupied table. Prevents double-bookings and scheduling mistakes automatically.</p>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          <div class="reveal">
-            <div class="p-5 bg-bg-secondary border-l-[3px] border-accent rounded-md mt-8">
-              <p class="text-sm text-text-secondary leading-relaxed">
-                <strong class="text-text-primary">Why this works:</strong> OpenTable charges €2-3 per cover plus monthly fees. For busy restaurants, that's thousands per year. This system costs €25/month total. No commissions, no lock-in, no gatekeepers.
-              </p>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Right: Product Demo -->
-        <div class="rounded-custom p-6 border border-border-dark reveal">
-          <div class="mb-4 p-3 bg-bg-primary border border-border-dark rounded-md flex items-center justify-between gap-3">
-            <p class="text-xs text-text-secondary leading-relaxed flex-1 m-0">
-              <strong class="text-text-primary">Quick start:</strong> Add a reservation with guest name and party size. The system auto-assigns the best table. Try navigating between dates to see how reservations persist.
-            </p>
-            <button class="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-text-primary bg-transparent border border-border-hover rounded-custom-sm transition-all duration-200 hover:border-text-muted hover:-translate-y-0.5 m-0 cursor-pointer" id="fullscreenBtn">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
-              </svg>
-              Fullscreen
-            </button>
-          </div>
-
-          <div class="bg-bg-primary border border-border-dark rounded-custom overflow-hidden">
-            <div class="h-9 bg-bg-secondary border-b border-border-dark flex items-center px-3 gap-2">
-              <div class="flex gap-1.5">
-                <span class="w-2.5 h-2.5 rounded-full bg-border-dark"></span>
-                <span class="w-2.5 h-2.5 rounded-full bg-border-dark"></span>
-                <span class="w-2.5 h-2.5 rounded-full bg-border-dark"></span>
-              </div>
-              <div class="flex-1 bg-bg-primary border border-border-dark rounded-md px-2.5 py-1 text-xs text-text-secondary flex items-center gap-1.5">
-                <svg class="w-3 h-3 flex-shrink-0" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <rect x="1" y="3" width="10" height="7" rx="1.5"/>
-                  <path d="M3.5 3V2a2.5 2.5 0 015 0v1"/>
-                </svg>
-                <span>table-reservations.app</span>
-              </div>
-            </div>
-            <div class="bg-[#1a1714] h-[600px] overflow-hidden relative">
-              <iframe src="https://lisablas.github.io/TableReservationsDemo" title="Table Reservations Demo" id="demoIframe" class="w-full h-full border-0 block"></iframe>
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-
+    <div class="form-row">
+      <label>Assign to Table (auto if empty)</label>
+      <select id="tableSelect">
+        <option value="">Auto-assign best fit</option>
+      </select>
     </div>
-  </section>
 
-  <!-- Footer -->
-  <footer class="py-10 border-t border-border-dark">
-    <div class="max-w-container mx-auto px-6">
-      <div class="flex md:flex-row flex-col justify-between items-center md:gap-0 gap-4 md:text-left text-center">
-        <p class="text-sm text-text-muted">&copy; 2026 Blas Alviz. Berlin, Germany.</p>
-      </div>
+    <div class="form-row">
+      <label>Notes / Pre-orders</label>
+      <textarea id="notes" placeholder="e.g. preordered fondue"></textarea>
     </div>
-  </footer>
 
-  <script>
-    // Reveal on scroll animation
-    const revealElements = document.querySelectorAll('.reveal');
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('reveal--visible');
-        }
+    <button class="btn-book" id="btnBook">Book Table</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="panel-right">
+    <h2>Floor Plan</h2>
+    <div class="tables-grid" id="tablesGrid"></div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──
+const SERVICE_START = 17; // 5 PM
+const SERVICE_END = 24;   // midnight
+
+const tables = [
+  { id: "1",   name: "Table 1",   seats: 4 },
+  { id: "2",   name: "Table 2",   seats: 4 },
+  { id: "3",   name: "Table 3",   seats: 2 },
+  { id: "4",   name: "Table 4",   seats: 5 },
+  { id: "Mut", name: "Mut",       seats: 4 },
+  { id: "10",  name: "Table 10",  seats: 10 },
+  { id: "11",  name: "Table 11",  seats: 2 },
+  { id: "12",  name: "Table 12",  seats: 5 },
+  { id: "13",  name: "Table 13",  seats: 2 },
+  { id: "14",  name: "Table 14",  seats: 3 },
+  { id: "15",  name: "Table 15",  seats: 4 },
+];
+
+let reservations = [];
+let nextId = 1;
+let currentDate = todayStr();
+
+// ── DATE HELPERS ──
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
+function shiftDate(dateStr, days) {
+  const d = new Date(dateStr + "T12:00:00");
+  d.setDate(d.getDate() + days);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
+// ── STORAGE ──
+function storageKey(dateStr) {
+  return `tp_${dateStr}`;
+}
+
+function save() {
+  const data = { nextId, reservations };
+  localStorage.setItem(storageKey(currentDate), JSON.stringify(data));
+}
+
+function load(dateStr) {
+  currentDate = dateStr;
+  const raw = localStorage.getItem(storageKey(dateStr));
+  if (raw) {
+    try {
+      const data = JSON.parse(raw);
+      reservations = data.reservations || [];
+      nextId = data.nextId || 1;
+    } catch {
+      reservations = [];
+      nextId = 1;
+    }
+  } else {
+    reservations = [];
+    nextId = 1;
+  }
+}
+
+// ── TIME HELPERS ──
+function timeToMin(str) {
+  const [h, m] = str.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function minToStr(min) {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+}
+
+function timesOverlap(s1, e1, s2, e2) {
+  return s1 < e2 && s2 < e1;
+}
+
+function reservationsForTable(tableId) {
+  return reservations.filter(r => r.tableId === tableId);
+}
+
+function isTableFreeAt(tableId, start, end) {
+  return !reservationsForTable(tableId).some(r => {
+    const rEnd = r.end ?? SERVICE_END * 60;
+    const checkEnd = end ?? SERVICE_END * 60;
+    return timesOverlap(r.start, rEnd, start, checkEnd);
+  });
+}
+
+function autoAssign(guestCount, start, end) {
+  const checkEnd = end ?? SERVICE_END * 60;
+  const candidates = tables
+    .filter(t => t.seats >= guestCount && isTableFreeAt(t.id, start, checkEnd))
+    .sort((a, b) => a.seats - b.seats);
+  return candidates.length ? candidates[0] : null;
+}
+
+// ── RENDER ──
+function render() {
+  const grid = document.getElementById("tablesGrid");
+  grid.innerHTML = "";
+
+  tables.forEach(table => {
+    const card = document.createElement("div");
+    card.className = "table-card";
+
+    const res = reservationsForTable(table.id).sort((a, b) => a.start - b.start);
+
+    let resHTML = "";
+    if (res.length === 0) {
+      resHTML = `<div class="table-empty">No reservations</div>`;
+    } else {
+      res.forEach(r => {
+        const timeLabel = r.end !== null ? `${minToStr(r.start)} – ${minToStr(r.end)}` : `${minToStr(r.start)} – open`;
+        resHTML += `
+          <div class="reservation-chip" data-res-id="${r.id}">
+            <button class="btn-remove" onclick="removeReservation(${r.id})" title="Remove">&times;</button>
+            <div class="res-name">${esc(r.guestName)}</div>
+            <div class="res-time">${timeLabel}</div>
+            <div class="res-guests">${r.guestCount} guest${r.guestCount > 1 ? "s" : ""}</div>
+            ${r.notes ? `<div class="res-notes">${esc(r.notes)}</div>` : ""}
+          </div>`;
       });
-    }, { threshold: 0.1 });
+    }
 
-    revealElements.forEach(el => observer.observe(el));
-
-    // Expandable features
-    document.querySelectorAll('.feature-content').forEach(el => {
-      el.addEventListener('click', () => {
-        el.classList.toggle('active');
-      });
+    const serviceSpan = (SERVICE_END - SERVICE_START) * 60;
+    let fills = "";
+    res.forEach(r => {
+      const rEnd = r.end ?? SERVICE_END * 60;
+      const left = ((r.start - SERVICE_START * 60) / serviceSpan) * 100;
+      const width = ((rEnd - r.start) / serviceSpan) * 100;
+      fills += `<div class="timeline-fill" style="left:${Math.max(0,left)}%;width:${Math.min(100-Math.max(0,left),width)}%"></div>`;
     });
 
-    // Fullscreen toggle
-    const fullscreenBtn = document.getElementById('fullscreenBtn');
-    const demoIframe = document.getElementById('demoIframe');
+    card.innerHTML = `
+      <div class="table-header">
+        <span class="table-name">${esc(table.name)}</span>
+        <span class="table-seats">${table.seats} seats</span>
+      </div>
+      ${resHTML}
+      <div class="timeline-bar">${fills}</div>
+      <div class="timeline-labels"><span>${SERVICE_START}:00</span><span>${SERVICE_END}:00</span></div>
+    `;
+    grid.appendChild(card);
+  });
+}
 
-    fullscreenBtn?.addEventListener('click', () => {
-      if (demoIframe.requestFullscreen) {
-        demoIframe.requestFullscreen();
-      } else if (demoIframe.webkitRequestFullscreen) {
-        demoIframe.webkitRequestFullscreen();
-      } else if (demoIframe.msRequestFullscreen) {
-        demoIframe.msRequestFullscreen();
-      }
-    });
-  </script>
+function esc(str) {
+  const d = document.createElement("div");
+  d.textContent = str;
+  return d.innerHTML;
+}
 
+// ── ACTIONS ──
+function showMsg(text, type) {
+  const el = document.getElementById("msg");
+  el.textContent = text;
+  el.className = "msg " + type;
+  if (type === "success") setTimeout(() => { el.className = "msg"; }, 3000);
+}
+
+function addReservation() {
+  const name = document.getElementById("guestName").value.trim();
+  const count = parseInt(document.getElementById("guestCount").value, 10);
+  const startStr = document.getElementById("timeStart").value;
+  const endStr = document.getElementById("timeEnd").value;
+  const manualTable = document.getElementById("tableSelect").value;
+  const notes = document.getElementById("notes").value.trim();
+
+  if (!name) return showMsg("Enter a guest name.", "error");
+  if (!count || count < 1) return showMsg("Enter a valid guest count.", "error");
+  if (!startStr) return showMsg("Set an arrival time.", "error");
+
+  const start = timeToMin(startStr);
+  const end = endStr ? timeToMin(endStr) : null;
+  if (end !== null && end <= start) return showMsg("Departure must be after arrival.", "error");
+
+  const checkEnd = end ?? SERVICE_END * 60;
+  let assignedTable;
+
+  if (manualTable) {
+    const t = tables.find(t => t.id === manualTable);
+    if (t.seats < count) return showMsg(`Table ${t.name} only has ${t.seats} seats (need ${count}).`, "error");
+    if (!isTableFreeAt(t.id, start, checkEnd)) return showMsg(`Table ${t.name} is occupied during that time.`, "error");
+    assignedTable = t;
+  } else {
+    assignedTable = autoAssign(count, start, end);
+    if (!assignedTable) return showMsg("No available table fits this party at that time.", "error");
+  }
+
+  reservations.push({
+    id: nextId++,
+    guestName: name,
+    guestCount: count,
+    start,
+    end,
+    tableId: assignedTable.id,
+    notes
+  });
+
+  save();
+
+  const timeLabel = end !== null ? `${minToStr(start)}–${minToStr(end)}` : `${minToStr(start)}–open`;
+  showMsg(`Booked ${name} → ${assignedTable.name} (${timeLabel})`, "success");
+  document.getElementById("guestName").value = "";
+  document.getElementById("notes").value = "";
+  render();
+}
+
+function removeReservation(id) {
+  reservations = reservations.filter(r => r.id !== id);
+  save();
+  render();
+}
+
+// ── DATE NAVIGATION ──
+function goToDate(dateStr) {
+  load(dateStr);
+  document.getElementById("datePicker").value = currentDate;
+  render();
+}
+
+// ── INIT ──
+function init() {
+  const picker = document.getElementById("datePicker");
+  picker.value = todayStr();
+
+  picker.addEventListener("change", () => goToDate(picker.value));
+  document.getElementById("prevDay").addEventListener("click", () => goToDate(shiftDate(currentDate, -1)));
+  document.getElementById("nextDay").addEventListener("click", () => goToDate(shiftDate(currentDate, +1)));
+  document.getElementById("todayBtn").addEventListener("click", () => goToDate(todayStr()));
+
+  const sel = document.getElementById("tableSelect");
+  tables.forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t.id;
+    opt.textContent = `${t.name} (${t.seats} seats)`;
+    sel.appendChild(opt);
+  });
+
+  document.getElementById("btnBook").addEventListener("click", addReservation);
+
+  load(todayStr());
+  render();
+}
+
+init();
+</script>
 </body>
 </html>
